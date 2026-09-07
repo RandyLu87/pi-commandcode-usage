@@ -28,24 +28,45 @@ Standalone extension: it reads pi's OAuth credential for `commandcode` and calls
 
 ## Install
 
-Copy the extension into pi's global extensions directory (auto-discovered at startup):
+## Install
+
+### Recommended: `pi install` (one command)
+
+This repository is a standard [pi package](https://pi.dev/packages) — install it straight from GitHub with pi's own package manager:
 
 ```bash
-mkdir -p ~/.pi/agent/extensions
-cp ccq-quota-bar.ts ~/.pi/agent/extensions/
+pi install git:github.com/RandyLu87/pi-commandcode-usage
 ```
 
-Then restart pi, or run `/reload` in an existing session. The usage line appears automatically once loaded and a `commandcode` credential is found.
+That adds it to `~/.pi/agent/settings.json` under `packages` (alongside `pi-commandcode-provider` if you have it), clones the repo to `~/.pi/agent/git/`, and loads the extension on the next startup. Restart pi or run `/reload`, and the usage line appears automatically once a `commandcode` credential is found.
 
-To uninstall, delete the file:
+Manage it like any other pi package:
+
+```bash
+pi list                       # show installed packages
+pi remove git:github.com/RandyLu87/pi-commandcode-usage   # uninstall
+pi update --extensions        # refresh git-pinned packages
+```
+
+> Pin a specific release instead of tracking main: `pi install git:github.com/RandyLu87/pi-commandcode-usage@v1.0.0`
+
+### Manual install (copy the file)
+
+If you prefer not to use pi's package manager (or you are on Oh My Pi), copy the extension into the extensions directory:
+
+```bash
+mkdir -p ~/.pi/agent/extensions      # pi
+# or: mkdir -p ~/.omp/agent/extensions   # Oh My Pi
+cp index.ts ~/.pi/agent/extensions/ccq-quota-bar.ts
+```
+
+Then restart pi / OMP, or run `/reload`.
+
+To uninstall manually, delete the file:
 
 ```bash
 rm ~/.pi/agent/extensions/ccq-quota-bar.ts
 ```
-
-### Using it with Oh My Pi
-
-pi and [Oh My Pi](https://github.com/can1357/oh-my-pi) share the same extension API. Copy the file to `~/.omp/agent/extensions/ccq-quota-bar.ts` instead, then restart or `/reload`.
 
 ## Usage
 
@@ -138,7 +159,7 @@ Command Code's usage API returns **remaining** monthly credits but **not** the m
 
 ## Configuration
 
-Defaults are constants at the top of `ccq-quota-bar.ts` — edit and reload if you want to change them:
+Defaults are constants at the top of `index.ts` — edit and reload if you want to change them:
 
 | Constant | Default | Meaning |
 |---|---|---|
