@@ -1,5 +1,8 @@
 # pi-commandcode-usage
 
+[![npm version](https://img.shields.io/npm/v/pi-commandcode-usage)](https://www.npmjs.com/package/pi-commandcode-usage)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Persistent Command Code subscription usage line for [pi](https://pi.dev) — shows your **5-hour / weekly / monthly** quota as colored progress bars in a line **above the default footer**, auto-refreshing.
 
 ```
@@ -28,43 +31,48 @@ Standalone extension: it reads pi's OAuth credential for `commandcode` and calls
 
 ## Install
 
-## Install
+### Recommended: from npm (one command)
 
-### Recommended: `pi install` (one command)
+```bash
+pi install npm:pi-commandcode-usage
+```
 
-This repository is a standard [pi package](https://pi.dev/packages) — install it straight from GitHub with pi's own package manager:
+That adds it to `~/.pi/agent/settings.json` under `packages` (alongside `pi-commandcode-provider` if you have it), installs it under `~/.pi/agent/npm/`, and loads the extension on the next startup. Restart pi or run `/reload`, and the usage line appears automatically once a `commandcode` credential is found.
+
+Manage it like any other pi package:
+
+```bash
+pi list                     # show installed packages
+pi remove npm:pi-commandcode-usage
+pi update --extensions      # pull newer versions
+```
+
+### Alternative: install from GitHub
+
+The package is also published to GitHub — install straight from the repo if you want to track `main` directly:
 
 ```bash
 pi install git:github.com/RandyLu87/pi-commandcode-usage
 ```
 
-That adds it to `~/.pi/agent/settings.json` under `packages` (alongside `pi-commandcode-provider` if you have it), clones the repo to `~/.pi/agent/git/`, and loads the extension on the next startup. Restart pi or run `/reload`, and the usage line appears automatically once a `commandcode` credential is found.
-
-Manage it like any other pi package:
-
-```bash
-pi list                       # show installed packages
-pi remove git:github.com/RandyLu87/pi-commandcode-usage   # uninstall
-pi update --extensions        # refresh packages (see versioning below)
-```
-
 ### Versioning
 
-A `git:` package is **pinned to the commit it was installed at** — pi does not fetch the latest code on every startup. You choose how it tracks updates:
+Semantic versions are published to npm as `vX.Y.Z`. How updates flow depends on the source:
 
-- **Follow `main`** (default, no `@ref`): run `pi update --extensions` to pull the latest `main`. Install spec stays unpinned, so every update moves the clone forward.
+- **npm source** (default): `pi update --extensions` pulls the newest published version from npm.
+- **git source, unpinned**: `pi update --extensions` fast-forwards the clone to the latest `main`.
   ```bash
   pi install git:github.com/RandyLu87/pi-commandcode-usage   # unpinned: tracks main
   pi update --extensions                                      # pull latest main
   ```
-- **Pin a release tag** (recommended for stability): install with `@v1.0.0` and only move when you choose to re-pin. `pi update --extensions` reconciles the clone to the pinned tag but does **not** advance past it.
+- **git source, pinned to a release tag**: the clone stays at that tag; move it explicitly by re-installing with a newer tag.
   ```bash
   pi install git:github.com/RandyLu87/pi-commandcode-usage@v1.0.0
   # later, to move to a newer release:
   pi install git:github.com/RandyLu87/pi-commandcode-usage@v1.1.0
   ```
 
-Releases are tagged `vX.Y.Z` on the main branch. Check the [tags](https://github.com/RandyLu87/pi-commandcode-usage/tags) page for the latest.
+Latest npm version: [pi-commandcode-usage on npm](https://www.npmjs.com/package/pi-commandcode-usage).
 
 ### Manual install (copy the file)
 
