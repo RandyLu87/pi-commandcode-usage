@@ -45,10 +45,26 @@ Manage it like any other pi package:
 ```bash
 pi list                       # show installed packages
 pi remove git:github.com/RandyLu87/pi-commandcode-usage   # uninstall
-pi update --extensions        # refresh git-pinned packages
+pi update --extensions        # refresh packages (see versioning below)
 ```
 
-> Pin a specific release instead of tracking main: `pi install git:github.com/RandyLu87/pi-commandcode-usage@v1.0.0`
+### Versioning
+
+A `git:` package is **pinned to the commit it was installed at** — pi does not fetch the latest code on every startup. You choose how it tracks updates:
+
+- **Follow `main`** (default, no `@ref`): run `pi update --extensions` to pull the latest `main`. Install spec stays unpinned, so every update moves the clone forward.
+  ```bash
+  pi install git:github.com/RandyLu87/pi-commandcode-usage   # unpinned: tracks main
+  pi update --extensions                                      # pull latest main
+  ```
+- **Pin a release tag** (recommended for stability): install with `@v1.0.0` and only move when you choose to re-pin. `pi update --extensions` reconciles the clone to the pinned tag but does **not** advance past it.
+  ```bash
+  pi install git:github.com/RandyLu87/pi-commandcode-usage@v1.0.0
+  # later, to move to a newer release:
+  pi install git:github.com/RandyLu87/pi-commandcode-usage@v1.1.0
+  ```
+
+Releases are tagged `vX.Y.Z` on the main branch. Check the [tags](https://github.com/RandyLu87/pi-commandcode-usage/tags) page for the latest.
 
 ### Manual install (copy the file)
 
