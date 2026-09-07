@@ -1,6 +1,6 @@
 {
   "name": "pi-commandcode-usage",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Persistent Command Code usage line (5h / weekly / monthly quota bars) for the pi coding agent — auto-refreshing widget above the default footer",
   "keywords": [
     "pi-package",
