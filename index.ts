@@ -31,8 +31,16 @@
  * Placement: setWidget({ placement: "belowEditor" }), i.e. below the input
  * editor and above the default footer. The default footer (pwd / token /
  * model) is left untouched.
+ *
+ * Width: pi aborts the whole TUI if any component line is wider than the
+ * terminal ("Rendered line N exceeds terminal width"), and unlike plain
+ * string[] widgets a custom component is NOT auto-truncated. So render()
+ * honours its `width` argument: the line is compacted first (narrower
+ * progress bars, then the trailing timestamp dropped) and only as a last
+ * resort clipped with truncateToWidth().
  */
 
+import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -223,25 +231,30 @@ function fmtReset(resetAt: number | null): string {
 }
 
 /**
- * Draw a fixed-width progress bar.
+ * Draw a fixed-width progress bar. A width of 0 drops the bar and keeps the
+ * percentage only, which is how the line shrinks on very narrow terminals.
  * @param width bar width in characters
  */
 function bar(theme: { fg(name: string, text: string): string }, used: number, cap: number, width: number): string {
   const pct = cap > 0 ? used / cap : 0;
+  const pctStr = `${(pct * 100).toFixed(0)}%`;
+  if (width <= 0) return pctStr;
   const filled = Math.min(width, Math.round(pct * width));
   const exhausted = cap > 0 && used >= cap;
   const color = exhausted || pct >= 0.9 ? "error" : pct >= 0.7 ? "warning" : "success";
   const fill = theme.fg(color, "▓".repeat(exhausted ? width : filled));
   const rest = "░".repeat(width - (exhausted ? width : filled));
-  const pctStr = `${(pct * 100).toFixed(0)}%`;
   return `${fill}${rest} ${pctStr}`;
 }
+
+/** Bar widths tried from widest to narrowest before dropping content. */
+const BAR_WIDTHS = [12, 10, 8, 6, 5, 4, 3, 2, 1, 0];
 
 interface WidgetTheme {
   fg(name: string, text: string): string;
 }
 
-function buildLine(state: QuotaState, theme: WidgetTheme): string {
+function buildLine(state: QuotaState, theme: WidgetTheme, barWidth = 12, showTimestamp = true): string {
   const dim = (s: string) => theme.fg("dim", s);
   const label = theme.fg("text", "usage");
   if (!state.ok) {
@@ -253,12 +266,12 @@ function buildLine(state: QuotaState, theme: WidgetTheme): string {
   const wk = state.weekly;
   if (fh) {
     parts.push(
-      `${dim("5h")} ${bar(theme, fh.used, fh.cap, 12)} ${dim(`${fmtDollar(fh.used)}/${fmtDollar(fh.cap)}${fh.resetAt ? " " + fmtReset(fh.resetAt) : ""}`)}`,
+      `${dim("5h")} ${bar(theme, fh.used, fh.cap, barWidth)} ${dim(`${fmtDollar(fh.used)}/${fmtDollar(fh.cap)}${fh.resetAt ? " " + fmtReset(fh.resetAt) : ""}`)}`,
     );
   }
   if (wk) {
     parts.push(
-      `${dim("7d")} ${bar(theme, wk.used, wk.cap, 12)} ${dim(`${fmtDollar(wk.used)}/${fmtDollar(wk.cap)}${wk.resetAt ? " " + fmtReset(wk.resetAt) : ""}`)}`,
+      `${dim("7d")} ${bar(theme, wk.used, wk.cap, barWidth)} ${dim(`${fmtDollar(wk.used)}/${fmtDollar(wk.cap)}${wk.resetAt ? " " + fmtReset(wk.resetAt) : ""}`)}`,
     );
   }
   // Monthly: draw a bar when the cap is known (mapped from plan); otherwise
@@ -266,18 +279,33 @@ function buildLine(state: QuotaState, theme: WidgetTheme): string {
   if (state.monthlyCap !== undefined && state.monthlyRemaining !== undefined) {
     const used = Math.max(0, state.monthlyCap - state.monthlyRemaining);
     parts.push(
-      `${dim("mo")} ${bar(theme, used, state.monthlyCap, 12)} ${dim(`${fmtDollar(used)}/${fmtDollar(state.monthlyCap)} left ${fmtDollar(state.monthlyRemaining)}`)}`,
+      `${dim("mo")} ${bar(theme, used, state.monthlyCap, barWidth)} ${dim(`${fmtDollar(used)}/${fmtDollar(state.monthlyCap)} left ${fmtDollar(state.monthlyRemaining)}`)}`,
     );
   } else if (state.monthlyRemaining !== undefined) {
     parts.push(`${dim("mo")} ${dim(`left ${fmtDollar(state.monthlyRemaining)}`)}`);
   }
-  if (state.fetchedAt) {
+  if (state.fetchedAt && showTimestamp) {
     const t = new Date(state.fetchedAt);
     const hh = String(t.getHours()).padStart(2, "0");
     const mm = String(t.getMinutes()).padStart(2, "0");
     parts.push(dim(`${hh}:${mm}`));
   }
   return parts.join("  ");
+}
+
+/** Render one quota line that always fits `width`; pi hard-fails otherwise. */
+function renderFitted(state: QuotaState, theme: WidgetTheme, width: number): string {
+  const max = Math.max(1, Math.floor(width));
+  // Widest readable variants first: keep the timestamp while the bars are
+  // still legible, then drop it before shrinking the bars further, and clip
+  // as a last resort.
+  for (const barWidth of BAR_WIDTHS) {
+    for (const showTimestamp of barWidth >= 6 ? [true, false] : [false]) {
+      const line = buildLine(state, theme, barWidth, showTimestamp);
+      if (visibleWidth(line) <= max) return line;
+    }
+  }
+  return truncateToWidth(buildLine(state, theme, 0, false), max, "");
 }
 
 interface CtxLike {
@@ -357,7 +385,9 @@ export default function (pi: PiLike): void {
       (_tui, theme) => {
         tuiRef = _tui as { requestRender(force?: boolean): void };
         return {
-          render: () => [buildLine(state, theme as { fg(name: string, text: string): string })],
+          render: (width: number) => [
+            renderFitted(state, theme as { fg(name: string, text: string): string }, width),
+          ],
           invalidate: () => {},
         };
       },

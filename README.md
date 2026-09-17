@@ -156,6 +156,20 @@ usage  5h ▓░░░░░░░░░░░ 9% $1.32/$14 resets in 1h 33m   7
 | `left $68.5` | monthly remaining credits (shown when cap is known) |
 | `20:40` | last successful fetch time |
 
+### Narrow terminals
+
+Custom widgets are **not** auto-truncated by pi: a render line wider than the
+terminal aborts the whole TUI (`Rendered line N exceeds terminal width`). The
+line therefore adapts to the available width, in this order:
+
+1. full line, 12-cell bars, with timestamp;
+2. timestamp dropped;
+3. bars narrowed step by step (`10 → 8 → 6 → 5 … → 1`, then percentage only);
+4. final fallback: clipped with `truncateToWidth()`.
+
+So on an 80-column terminal you still get all three windows and their `used/cap`
+figures, just without the fetch time and with shorter bars.
+
 ### Colors
 
 The bar's filled cells are colored by usage ratio of that window:
