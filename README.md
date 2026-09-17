@@ -160,15 +160,25 @@ usage  5h ▓░░░░░░░░░░░ 9% $1.32/$14 resets in 1h 33m   7
 
 Custom widgets are **not** auto-truncated by pi: a render line wider than the
 terminal aborts the whole TUI (`Rendered line N exceeds terminal width`). The
-line therefore adapts to the available width, in this order:
+line therefore adapts to the available width. Segments are sacrificed in this
+order, and the progress bars shrink within each step:
 
-1. full line, 12-cell bars, with timestamp;
-2. timestamp dropped;
-3. bars narrowed step by step (`10 → 8 → 6 → 5 … → 1`, then percentage only);
-4. final fallback: clipped with `truncateToWidth()`.
+1. full line: three windows, reset countdowns, bars, timestamp;
+2. fetch timestamp dropped;
+3. reset countdowns dropped (`resets in …`);
+4. monthly window dropped;
+5. weekly window dropped (5h only);
+6. last resort: `truncateToWidth()` clipping.
 
-So on an 80-column terminal you still get all three windows and their `used/cap`
-figures, just without the fetch time and with shorter bars.
+Examples for the same data:
+
+```
+200 cols  usage  5h ▓░░░░░░░░░░░ 9% $1.32/$14 resets in 1h 33m  7d ▓░░░░░░░░░░░ 4% $1.46/$35 resets in 5d 20h  mo ░░░░░░░░░░░░ 2% $1.46/$70 left $68.5  20:40
+124 cols  usage  5h ░░░░░░ 0% $0.08/$14 resets in 3h 9m  7d ▓░░░░░ 10% $3.47/$35 resets in 2d 12h  mo ▓░░░░░ 13% $9.41/$70 left $60.6
+100 cols  usage  5h ░░░░░░░░ 0% $0.08/$14  7d ▓░░░░░░░ 10% $3.47/$35  mo ▓░░░░░░░ 13% $9.41/$70 left $60.6
+ 70 cols  usage  5h 0% $0.08/$14  7d 10% $3.47/$35  mo 13% $9.41/$70 left $60.6
+ 40 cols  usage  5h 0% $0.08/$14  7d 10% $3.47/$35
+```
 
 ### Colors
 
